@@ -24,7 +24,7 @@ class Bot(commands.AutoShardedBot):
     
     def __init__(self):
     
-        self.bot_name = "[REPLACE]"
+        self.bot_name = "Crypto Ticker"
 
         self.logger = logging.getLogger(self.bot_name)
         self.logger.setLevel(logging.DEBUG)
