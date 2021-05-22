@@ -1,0 +1,12 @@
+{
+  "token": "TOKEN",
+  "prefix": "!",
+  "logs_folder": "logs",
+  "log_filename": "%Y-%m-%dT%H-%M-%S.txt",
+  "embed_color": "#7289DA",
+  "description": "A simple ticker for the any cryptocurrency",
+  "cryptocurrency_id": "nano",
+  "cryptocurrency_name": "NANO",
+  "fiat_id": "usd",
+  "fiat_name": "$"
+}
