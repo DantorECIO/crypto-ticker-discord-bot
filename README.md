@@ -6,6 +6,8 @@ A Discord bot that elegantly displays the price of any cryptocurrency in its nic
 
 This Discord bot is more of a template to implement bots suited to any cryptocurrency [CoinGecko](https://www.coingecko.com/) supports. It's set to [Nano](https://nano.org/) by default.
 
+This bot is supposed to be on as few servers as possible, since it needs privileged intents and Discord's API doesn't like updating nicknames too often.
+
 ## Requirements
 
 - Python >= 3.8

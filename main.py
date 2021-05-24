@@ -11,6 +11,7 @@ import os
 from os import listdir
 from os.path import isdir, isfile, join
 import signal
+import sqlite3
 import sys
 import traceback
 
@@ -62,11 +63,18 @@ class Bot(commands.AutoShardedBot):
 
         self.logger.addHandler(fh)
         
+        # Connect to database
+        self.database = sqlite3.connect(self.config["database"])
+        
         # Set the embed color
         rgb = self.hex_to_rgb(self.config["embed_color"])
         self.embed_color = discord.Colour.from_rgb(rgb[0], rgb[1], rgb[2])
 
         intents = discord.Intents.default()
+        intents.messages = True
+        intents.members = True
+        intents.dm_messages = True
+        
 
         super().__init__(command_prefix=self.config["prefix"], case_insensitive=True, description=self.config["description"], intents=intents)
 
@@ -109,23 +117,23 @@ class Bot(commands.AutoShardedBot):
         if isinstance(error, commands.CommandNotFound) or isinstance(error, commands.CheckFailure):
             return
         elif isinstance(error, commands.DisabledCommand):
-            return await ctx.send(embed=discord.Embed(title=":no_entry:  **This command is currently disabled.**", color=self.embed_color))
+            return await ctx.send(embed=discord.Embed(title=":no_entry:  This command is currently disabled.", color=self.embed_color))
         elif isinstance(error, commands.CommandOnCooldown):
-            return await ctx.send(embed=discord.Embed(title=":no_entry:  **This command is on cooldown for another " + str("%.2f" % error.retry_after) + " seconds!**", color=self.embed_color))
+            return await ctx.send(embed=discord.Embed(title=":no_entry:  This command is on cooldown for another **" + str("%.2f" % error.retry_after) + " seconds!**", color=self.embed_color))
         elif isinstance(error, commands.MissingPermissions):
-            return await ctx.send(embed=discord.Embed(title=":no_entry:  **You need the administrator permission on your server to do that!**", color=self.embed_color))
+            return await ctx.send(embed=discord.Embed(title=":no_entry:  You need the administrator permission on your server to do that!", color=self.embed_color))
         elif isinstance(error, commands.NoPrivateMessage):
-            return await ctx.send(embed=discord.Embed(title=":no_entry:  **This command cannot be used in DMs!**", color=self.embed_color))
+            return await ctx.send(embed=discord.Embed(title=":no_entry:  This command cannot be used in DMs!", color=self.embed_color))
         elif isinstance(error, commands.NotOwner):
-            return await ctx.send(embed=discord.Embed(title=":no_entry:  **This command is exclusive to the administration of the bot!**", color=self.embed_color))
+            return await ctx.send(embed=discord.Embed(title=":no_entry:  This command is exclusive to the administration of the bot!", color=self.embed_color))
         elif isinstance(error, commands.BotMissingPermissions):
-            return await ctx.send(embed=discord.Embed(title=":no_entry:  **The bot does not have sufficient permissions to run this command!**", color=self.embed_color))
+            return await ctx.send(embed=discord.Embed(title=":no_entry:  The bot does not have sufficient permissions to run this command!", color=self.embed_color))
         elif isinstance(error, commands.BadArgument):
-            return await ctx.send(embed=discord.Embed(title=":no_entry:  **Could not find this user on your server! Make sure you've typed their name or ID correctly and that they are on your server.**", color=self.embed_color))
+            return await ctx.send(embed=discord.Embed(title=":no_entry:  Bad arguments! Please refer to the help entry of the command you tried to use!", color=self.embed_color))
         elif isinstance(error, commands.MissingRequiredArgument):
-            return await ctx.send(embed=discord.Embed(title=":no_entry:  **There's an argument missing! Please refer to the help entry of the command you tried to use!**", color=self.embed_color))
+            return await ctx.send(embed=discord.Embed(title=":no_entry:  There's an argument missing! Please refer to the help entry of the command you tried to use!", color=self.embed_color))
 
-        await ctx.send(embed=discord.Embed(title=":no_entry:  **There was an unexpected error when running this command! Sorry about that. :(**", color=self.embed_color))
+        await ctx.send(embed=discord.Embed(title=":no_entry:  There was an unexpected error when running this command! Sorry about that. :(", color=self.embed_color))
 
 
     # GLOBAL CHECKS

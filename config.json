@@ -1,6 +1,7 @@
 {
   "token": "TOKEN",
   "prefix": "!",
+  "database": "database.db",
   "logs_folder": "logs",
   "log_filename": "%Y-%m-%dT%H-%M-%S.txt",
   "embed_color": "#7289DA",
@@ -8,5 +9,7 @@
   "cryptocurrency_id": "nano",
   "cryptocurrency_name": "NANO",
   "fiat_id": "usd",
-  "fiat_name": "$"
+  "fiat_name": "$",
+  "max_ppa": 20,
+  "max_cpa": 20
 }
