@@ -14,11 +14,11 @@ class TickerCog(commands.Cog, name='Ticker'):
     @tasks.loop(seconds=5)
     async def ticker_task(self):
         coingecko = pycoingecko.CoinGeckoAPI()
-        prices = coingecko.get_price(ids=self.bot.config["cryptocurrency_id"], vs_currencies='usd')
-        history = coingecko.get_coin_market_chart_by_id(id='nano', vs_currency=['usd'], days='1')
-        price_usd = round(prices[self.bot.config["cryptocurrency_id"]]['usd'], 4)
-        percentage = round(((prices[self.bot.config["cryptocurrency_id"]]['usd'] / history['prices'][0][1]) - 1) * 100, 2)
-        difference = round(prices[self.bot.config["cryptocurrency_id"]]['usd'] - history['prices'][0][1], 2)
+        prices = coingecko.get_price(ids=self.bot.config["cryptocurrency_id"], vs_currencies=self.bot.config["fiat_id"])
+        history = coingecko.get_coin_market_chart_by_id(id='nano', vs_currency=[self.bot.config["fiat_id"]], days='1')
+        price_usd = round(prices[self.bot.config["cryptocurrency_id"]][self.bot.config["fiat_id"]], 4)
+        percentage = round(((prices[self.bot.config["cryptocurrency_id"]][self.bot.config["fiat_id"]] / history['prices'][0][1]) - 1) * 100, 2)
+        difference = round(prices[self.bot.config["cryptocurrency_id"]][self.bot.config["fiat_id"]] - history['prices'][0][1], 2)
         c_name = self.bot.config["cryptocurrency_name"]
         f_name = self.bot.config["fiat_name"]
         for g in self.bot.guilds:
