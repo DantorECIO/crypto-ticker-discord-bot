@@ -34,7 +34,7 @@ class TickerCog(commands.Cog, name='Ticker'):
         for g in self.bot.guilds:
             await g.me.edit(nick=f"{self.crypto_name}: {self.fiat_name}{price_fiat:.2f}")
         status = discord.Status.idle
-        if percentage < 2:
+        if percentage < -2:
             status = discord.Status.dnd
         elif percentage > 2:
             status = discord.Status.online
