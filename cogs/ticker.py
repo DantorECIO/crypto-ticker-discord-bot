@@ -4,6 +4,7 @@ from discord import utils
 from discord.ext import commands
 from discord.ext import tasks
 import discord
+import math
 import pycoingecko
 import sqlite3
 
@@ -99,6 +100,10 @@ class TickerCog(commands.Cog, name='Ticker'):
         """Adds a personal price alert at a given price"""
         if price < 0:
             return await ctx.send(embed=discord.Embed(title=f":no_entry:  You cannot set a price alert for a price lower than 0!", color=self.bot.embed_color))
+        if math.isnan(price):
+            return await ctx.send(embed=discord.Embed(title=f":no_entry:  Please stick to existing numbers for price alerts. :)", color=self.bot.embed_color))
+        if math.isinf(price):
+            return await ctx.send(embed=discord.Embed(title=f":no_entry:  To the moon, yes. But not to infinity.", color=self.bot.embed_color))
         limit = self.bot.config["max_ppa"]
         cursor = self.bot.database.cursor()
         cursor.execute('SELECT price FROM ppa WHERE invoker_id = ?', (ctx.author.id,))
@@ -154,6 +159,10 @@ class TickerCog(commands.Cog, name='Ticker'):
         """Adds a channel price alert at a given price"""
         if price < 0:
             return await ctx.send(embed=discord.Embed(title=f":no_entry:  You cannot set a price alert for a price lower than 0!", color=self.bot.embed_color))
+        if math.isnan(price):
+            return await ctx.send(embed=discord.Embed(title=f":no_entry:  Please stick to existing numbers for price alerts. :)", color=self.bot.embed_color))
+        if math.isinf(price):
+            return await ctx.send(embed=discord.Embed(title=f":no_entry:  To the moon, yes. But not to infinity.", color=self.bot.embed_color))
         limit = self.bot.config["max_cpa"]
         cursor = self.bot.database.cursor()
         cursor.execute('SELECT price FROM cpa WHERE channel_id = ?', (ctx.channel.id,))
