@@ -9,37 +9,60 @@ import pycoingecko
 import sqlite3
 
 
-class TickerCog(commands.Cog, name='Ticker'):
+DATETIME_FORMAT_STRING = "%Y-%m-%d %H:%M"
+HUMAN_READABLE_SUFFIXES = ("", "K", "M", "B", "T", "Q")
+
+
+class TickerCog(commands.Cog, name='Cryptocurrency'):
     """Commands for managing ticker and alerts"""
 
     def __init__(self, bot):
         self.bot = bot
         self.previous_price = -1
         self.crypto_name = self.bot.config["cryptocurrency_name"]
+        self.crypto_id = self.bot.config["cryptocurrency_id"]
         self.fiat_name = self.bot.config["fiat_name"]
+        self.fiat_id = self.bot.config["fiat_id"]
         cursor = self.bot.database.cursor()
         cursor.execute('CREATE TABLE IF NOT EXISTS ppa("invoker_id" INT, "price" REAL, "timestamp" INT)')
         cursor.execute('CREATE TABLE IF NOT EXISTS cpa("channel_id" INT, "invoker_id" INT, "price" REAL, "timestamp" INT)')
         self.bot.database.commit()
         self.ticker_task.start()
-            
+        
+        
+    def human_readable(self, number):
+        base = 1000
+        multiple = math.trunc(math.log2(number) / math.log2(base))
+        value = number / math.pow(base, multiple)
+        suffix = HUMAN_READABLE_SUFFIXES[multiple]
+        precision = self.bot.config["human_readable_precision"]
+        if precision == 0:
+            return str(int(value)) + suffix
+        return f"{value:.{precision}f}{suffix}"
         
     @tasks.loop(seconds=5)
     async def ticker_task(self):
         coingecko = pycoingecko.CoinGeckoAPI()
-        prices = coingecko.get_price(ids=self.bot.config["cryptocurrency_id"], vs_currencies=self.bot.config["fiat_id"])
-        history = coingecko.get_coin_market_chart_by_id(id='nano', vs_currency=[self.bot.config["fiat_id"]], days='1')
-        price_fiat = round(prices[self.bot.config["cryptocurrency_id"]][self.bot.config["fiat_id"]], 4)
-        percentage = round(((prices[self.bot.config["cryptocurrency_id"]][self.bot.config["fiat_id"]] / history['prices'][0][1]) - 1) * 100, 2)
-        difference = round(prices[self.bot.config["cryptocurrency_id"]][self.bot.config["fiat_id"]] - history['prices'][0][1], 2)
+        precision = self.bot.config["presence_precision"]
+        prices = coingecko.get_price(ids=self.crypto_id, vs_currencies=self.fiat_id)
+        history = coingecko.get_coin_market_chart_by_id(id=self.crypto_id, vs_currency=[self.fiat_id], days='1')
+        price_fiat = prices[self.crypto_id][self.fiat_id]
+        percentage = ((prices[self.crypto_id][self.fiat_id] / history['prices'][0][1]) - 1) * 100
+        difference = prices[self.crypto_id][self.fiat_id] - history['prices'][0][1]
         for g in self.bot.guilds:
-            await g.me.edit(nick=f"{self.crypto_name}: {self.fiat_name}{price_fiat:.2f}")
+            if precision == 0:
+                await g.me.edit(nick=f"{self.crypto_name}: {self.fiat_name}{int(price_fiat)}")
+            else:
+                await g.me.edit(nick=f"{self.crypto_name}: {self.fiat_name}{price_fiat:.{precision}f}")
         status = discord.Status.idle
         if percentage < -2:
             status = discord.Status.dnd
         elif percentage > 2:
             status = discord.Status.online
-        status_string = f"+{self.fiat_name}{difference:.2f} (+{percentage:.2f}%)" if percentage >= 0 else f"-{self.fiat_name}{abs(difference):.2f} ({percentage:.2f}%)"
+        if precision == 0:
+            status_string = f"+{self.fiat_name}{int(difference)} (+{percentage:.2f}%)" if percentage >= 0 else f"-{self.fiat_name}{abs(int(difference))} ({percentage:.2f}%)"
+        else:
+            status_string = f"+{self.fiat_name}{difference:.{precision}f} (+{percentage:.2f}%)" if percentage >= 0 else f"-{self.fiat_name}{abs(difference):.{precision}f} ({percentage:.2f}%)"
         # price alerts
         cursor = self.bot.database.cursor()
         if self.previous_price != -1:
@@ -50,7 +73,7 @@ class TickerCog(commands.Cog, name='Ticker'):
                 row = ppa_rows[i]
                 invoker = self.bot.get_user(row[0])
                 price = row[1]
-                timestamp = datetime.fromtimestamp(row[2]).strftime("%d-%m-%Y %H:%M")
+                timestamp = datetime.fromtimestamp(row[2]).strftime(DATETIME_FORMAT_STRING)
                 right_now = datetime.utcnow().strftime("%H:%M")
                 if invoker == None:
                     continue
@@ -72,7 +95,7 @@ class TickerCog(commands.Cog, name='Ticker'):
                 row = cpa_rows[i]
                 invoker = row[0]
                 price = row[1]
-                timestamp = datetime.fromtimestamp(row[2]).strftime("%d.%m.%Y %H:%M")
+                timestamp = datetime.fromtimestamp(row[2]).strftime(DATETIME_FORMAT_STRING)
                 channel = self.bot.get_channel(row[3])
                 right_now = datetime.utcnow().strftime("%H:%M")
                 if channel == None:
@@ -88,8 +111,8 @@ class TickerCog(commands.Cog, name='Ticker'):
                         self.bot.logger.warn(f"Unable to send price alert to {channel.id} :(")
                     cursor.execute("DELETE FROM cpa WHERE price = ? AND channel_id = ?", (price, channel.id))
                     self.bot.database.commit()
-        self.previous_price = price_fiat
         await self.bot.change_presence(status=status, activity=discord.Activity(type=discord.ActivityType.watching, name=status_string))
+        self.previous_price = price_fiat
 
     @ticker_task.before_loop
     async def before(self):
@@ -130,12 +153,12 @@ class TickerCog(commands.Cog, name='Ticker'):
         rows = cursor.fetchall()
         if len(rows) == 0:
             return await ctx.send(embed=discord.Embed(title=f":no_entry:  You have no personal price alerts!", color=self.bot.embed_color))
-        embed = discord.Embed(title=f":page_with_curl:  List of **{ctx.author}**'s personal price alerts", footer="All times in UTC.", color=self.bot.embed_color)
+        embed = discord.Embed(title=f":page_with_curl:  List of **{ctx.author}**'s personal price alerts", color=self.bot.embed_color)
         embed.set_footer(text="All times in UTC.")
         for i in range(0, len(rows)):
             row = rows[i]
             price = row[0]
-            timestamp = datetime.fromtimestamp(row[1]).strftime("%d-%m-%Y %H:%M")
+            timestamp = datetime.fromtimestamp(row[1]).strftime(DATETIME_FORMAT_STRING)
             embed.add_field(name=f"{self.fiat_name}{price}", value=f"from {timestamp}", inline=False)
         return await ctx.send(embed=embed)
     
@@ -188,12 +211,12 @@ class TickerCog(commands.Cog, name='Ticker'):
         rows = cursor.fetchall()
         if len(rows) == 0:
             return await ctx.send(embed=discord.Embed(title=f":no_entry:  There are no channel price alerts for this channel.", color=self.bot.embed_color))
-        embed = discord.Embed(title=f":page_with_curl:  List of channel price alerts for **#{ctx.channel.name}**", footer="All times in UTC.", color=self.bot.embed_color)
+        embed = discord.Embed(title=f":page_with_curl:  List of channel price alerts for **#{ctx.channel.name}**", color=self.bot.embed_color)
         embed.set_footer(text="All times in UTC.")
         for i in range(0, len(rows)):
             row = rows[i]
             price = row[0]
-            timestamp = datetime.fromtimestamp(row[1]).strftime("%d-%m-%Y %H:%M")
+            timestamp = datetime.fromtimestamp(row[1]).strftime(DATETIME_FORMAT_STRING)
             invoker_id = row[2]
             embed.add_field(name=f"{self.fiat_name}{price}", value=f"by <@{invoker_id}> from {timestamp}", inline=False)
         return await ctx.send(embed=embed)
@@ -213,6 +236,39 @@ class TickerCog(commands.Cog, name='Ticker'):
         self.bot.database.commit()
         return await ctx.send(embed=discord.Embed(title=":wastebasket:  Channel price alert removed.", color=self.bot.embed_color))
     
+    @commands.command(name="stats", aliases=["ath", "atl", "cap", "mcap", "supply", "rank"])
+    async def stats(self, ctx):
+        """Shows general stats about the crypto currency"""
+        precision = self.bot.config["stats_precision"]
+        coingecko = pycoingecko.CoinGeckoAPI()
+        history = coingecko.get_coin_market_chart_by_id(id=self.crypto_id, vs_currency=[self.fiat_id], days='1')
+        markets = coingecko.get_coins_markets(ids=self.bot.config["cryptocurrency_id"], vs_currency=self.fiat_id, order="market_cap_desc", per_page=100, page=1, sparkline=False)[0]
+        market_cap = self.fiat_name + self.human_readable(markets["market_cap"]) if self.bot.config["human_readable_stats"] else self.fiat_name + "{:,}".format(markets["market_cap"])
+        circulating_supply = self.human_readable(markets["circulating_supply"]) if self.bot.config["human_readable_stats"] else "{:,}".format(markets["circulating_supply"])
+        try:
+            total_supply = self.human_readable(markets["total_supply"]) + " " if self.bot.config["human_readable_stats"] else "{:,}".format(markets["total_supply"]) + " "
+        except TypeError:
+            total_supply = "???"
+        supply = (circulating_supply + " / " + total_supply).replace(".0 ", " ").replace(" / ???", "")
+        price = self.fiat_name + str(markets["current_price"])
+        percentage = ((markets["current_price"] / history['prices'][0][1]) - 1) * 100
+        difference = markets["current_price"] - history['prices'][0][1]
+        if precision == 0:
+            change = f"+{self.fiat_name}{int(difference)} (+{percentage:.2f}%)" if percentage >= 0 else f"-{self.fiat_name}{abs(int(difference))} ({percentage:.2f}%)"
+        else:
+            change = f"+{self.fiat_name}{difference:.{precision}f} (+{percentage:.2f}%)" if percentage >= 0 else f"-{self.fiat_name}{abs(difference):.{precision}f} ({percentage:.2f}%)"
+        ath = self.fiat_name + "{:,}".format(markets["ath"])
+        embed = discord.Embed(title=f":bar_chart:  Statistics for **{self.crypto_name}**", color=self.bot.embed_color)
+        if self.bot.config["human_readable_stats"]:
+            embed.set_footer(text="Some values are approximates.")
+        embed.add_field(name="Rank⠀", value=("#" + str(markets["market_cap_rank"])) + "⠀", inline=True)
+        embed.add_field(name="Market Cap⠀", value=market_cap + "⠀", inline=True)
+        embed.add_field(name="Circulating Supply", value=supply + "", inline=True)
+        embed.add_field(name="Price⠀", value=price + "⠀", inline=True)
+        embed.add_field(name="Change (24h)⠀", value=change + "⠀", inline=True)
+        embed.add_field(name="All-time High", value=ath + "", inline=True)
+        return await ctx.send(embed=embed)
+        
 
 def setup(bot):
     bot.add_cog(TickerCog(bot))

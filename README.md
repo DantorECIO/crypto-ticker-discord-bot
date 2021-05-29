@@ -23,7 +23,7 @@ The Python modules are listed in ``requirements.txt``, so you only need to do ``
 Go into ``config,json`` and change the following variables to suit your needs:
 
 - ``token``: Your Discord bot token.
-- ``cryptocurrency_id``: CoinGecko's ID of your cryptocurrency. You can look them up on their website, but it's usually something like ``nano``, ``btc``, ``eth`` etc.
+- ``cryptocurrency_id``: CoinGecko's ID of your cryptocurrency. You can look them up on their website, but it's usually something like ``nano``, ``bitcoin``, ``ethereum`` etc.
 - ``cryptocurrency_name``: Can be anything you want, it's used in the name to neatly show the name of the cryptocurrency used.
 - ``fiat_id``: CoinGecko's ID of the fiat currency your cryptocurrency's price is compared against. You can look them up on their website, but it's usually something like ``eur``, ``usd``, ``gbp`` etc.
 - ``fiat_name``: Can be anything you want, it's used in the name to neatly show the name of the fiat currency used.
