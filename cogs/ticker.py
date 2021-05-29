@@ -250,7 +250,7 @@ class TickerCog(commands.Cog, name='Cryptocurrency'):
         except TypeError:
             total_supply = "???"
         supply = (circulating_supply + " / " + total_supply).replace(".0 ", " ").replace(" / ???", "")
-        price = self.fiat_name + str(markets["current_price"])
+        price = self.fiat_name + str(round(markets["current_price"], precision))
         percentage = ((markets["current_price"] / history['prices'][0][1]) - 1) * 100
         difference = markets["current_price"] - history['prices'][0][1]
         if precision == 0:
