@@ -15,5 +15,5 @@
   "presence_precision": 2,
   "stats_precision": 4,
   "human_readable_stats": true,
-  "human_readable_precision": 0
+  "human_readable_precision": 2
 }
