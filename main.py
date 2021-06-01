@@ -57,6 +57,9 @@ class Bot(commands.AutoShardedBot):
             self.logger.debug("Loaded config.json")
 
         # Set the log file handler
+        if not os.path.exists(self.config["logs_folder"]):
+            os.mkdir(self.config["logs_folder"])
+
         fh = logging.FileHandler(join(self.config["logs_folder"], datetime.now().strftime(self.config["log_filename"])))
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(formatter)
