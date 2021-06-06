@@ -1,15 +1,15 @@
 from .utils import checks
 from datetime import datetime
-from discord import utils
+from dateutil import parser
 from discord.ext import commands
 from discord.ext import tasks
 import discord
 import math
 import pycoingecko
-import sqlite3
 
 
 DATETIME_FORMAT_STRING = "%Y-%m-%d %H:%M"
+DATE_FORMAT_STRING = "%Y-%m-%d"
 HUMAN_READABLE_SUFFIXES = ("", "K", "M", "B", "T", "Q")
 
 
@@ -236,9 +236,9 @@ class TickerCog(commands.Cog, name='Cryptocurrency'):
         self.bot.database.commit()
         return await ctx.send(embed=discord.Embed(title=":wastebasket:  Channel price alert removed.", color=self.bot.embed_color))
     
-    @commands.command(name="stats", aliases=["ath", "atl", "cap", "mcap", "supply", "rank"])
+    @commands.command(name="stats", aliases=["cap", "mcap", "supply", "rank", "volume"])
     async def stats(self, ctx):
-        """Shows general stats about the crypto currency"""
+        """Shows general stats about the cryptocurrency"""
         precision = self.bot.config["stats_precision"]
         coingecko = pycoingecko.CoinGeckoAPI()
         history = coingecko.get_coin_market_chart_by_id(id=self.crypto_id, vs_currency=[self.fiat_id], days='1')
@@ -257,7 +257,7 @@ class TickerCog(commands.Cog, name='Cryptocurrency'):
             change = f"+{self.fiat_name}{int(difference)} (+{percentage:.2f}%)" if percentage >= 0 else f"-{self.fiat_name}{abs(int(difference))} ({percentage:.2f}%)"
         else:
             change = f"+{self.fiat_name}{difference:.{precision}f} (+{percentage:.2f}%)" if percentage >= 0 else f"-{self.fiat_name}{abs(difference):.{precision}f} ({percentage:.2f}%)"
-        ath = self.fiat_name + "{:,}".format(markets["ath"])
+        total_volume = self.human_readable(markets["total_volume"]) if self.bot.config["human_readable_stats"] else "{:,}".format(markets["total_volume"])
         embed = discord.Embed(title=f":bar_chart:  Statistics for **{self.crypto_name}**", color=self.bot.embed_color)
         if self.bot.config["human_readable_stats"]:
             embed.set_footer(text="Some values are approximates.")
@@ -266,9 +266,40 @@ class TickerCog(commands.Cog, name='Cryptocurrency'):
         embed.add_field(name="Circulating Supply", value=supply + "", inline=True)
         embed.add_field(name="Price⠀", value=price + "⠀", inline=True)
         embed.add_field(name="Change (24h)⠀", value=change + "⠀", inline=True)
-        embed.add_field(name="All-time High", value=ath + "", inline=True)
+        embed.add_field(name="Volume (24h)", value=total_volume + "⠀", inline=True)
         return await ctx.send(embed=embed)
-        
+    
+    @commands.command(name="ath", aliases=["all-time-high"])
+    async def ath(self, ctx):
+        """Shows the cryptocurrency's all-time high"""
+        precision = self.bot.config["stats_precision"]
+        coingecko = pycoingecko.CoinGeckoAPI()
+        markets = coingecko.get_coins_markets(ids=self.bot.config["cryptocurrency_id"], vs_currency=self.fiat_id, order="market_cap_desc", per_page=100, page=1, sparkline=False)[0]
+        ath_fiat = markets["ath"]
+        ath_time = parser.parse(markets["ath_date"])
+        ath_change = markets["ath_change_percentage"]
+        embed = discord.Embed(title=f":chart_with_upwards_trend:  **{self.crypto_name}**'s all-time high is **{self.fiat_name}{ath_fiat:.{precision}f}**.", color=self.bot.embed_color)
+        if ath_time.hour == 0 and ath_time.minute == 0:
+            embed.description = f"All-time high was hit at **{ath_time.strftime(DATE_FORMAT_STRING)}**.\nChange to current price: **{ath_change:2f}%**."
+        else:
+            embed.description = f"All-time high was hit at **{ath_time.strftime(DATETIME_FORMAT_STRING)}** (UTC).\nChange to current price: **{ath_change:2f}%**."
+        await ctx.send(embed=embed)
+            
+    @commands.command(name="atl", aliases=["all-time-low"])
+    async def atl(self, ctx):
+        """Shows the cryptocurrency's all-time low"""
+        precision = self.bot.config["stats_precision"]
+        coingecko = pycoingecko.CoinGeckoAPI()
+        markets = coingecko.get_coins_markets(ids=self.bot.config["cryptocurrency_id"], vs_currency=self.fiat_id, order="market_cap_desc", per_page=100, page=1, sparkline=False)[0]
+        atl_fiat = markets["atl"]
+        atl_time = parser.parse(markets["atl_date"])
+        atl_change = markets["atl_change_percentage"]
+        embed = discord.Embed(title=f":chart_with_downwards_trend:  **{self.crypto_name}**'s all-time low is **{self.fiat_name}{atl_fiat:.{precision}f}**.", color=self.bot.embed_color)
+        if atl_time.hour == 0 and atl_time.minute == 0:
+            embed.description = f"All-time low was hit at **{atl_time.strftime(DATE_FORMAT_STRING)}**.\nChange to current price: **{atl_change:2f}%**."
+        else:
+            embed.description = f"All-time low was hit at **{atl_time.strftime(DATETIME_FORMAT_STRING)}** (UTC).\nChange to current price: **{atl_change:2f}%**."
+        await ctx.send(embed=embed)
 
 def setup(bot):
     bot.add_cog(TickerCog(bot))
