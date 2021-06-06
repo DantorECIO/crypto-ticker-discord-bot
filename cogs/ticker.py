@@ -266,7 +266,7 @@ class TickerCog(commands.Cog, name='Cryptocurrency'):
         embed.add_field(name="Circulating Supply", value=supply + "", inline=True)
         embed.add_field(name="Price⠀", value=price + "⠀", inline=True)
         embed.add_field(name="Change (24h)⠀", value=change + "⠀", inline=True)
-        embed.add_field(name="Volume (24h)", value=total_volume + "⠀", inline=True)
+        embed.add_field(name="Volume (24h)⠀", value=total_volume + "⠀", inline=True)
         return await ctx.send(embed=embed)
     
     @commands.command(name="ath", aliases=["all-time-high"])
