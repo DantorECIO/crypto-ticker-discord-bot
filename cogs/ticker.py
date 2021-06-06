@@ -280,9 +280,9 @@ class TickerCog(commands.Cog, name='Cryptocurrency'):
         ath_change = markets["ath_change_percentage"]
         embed = discord.Embed(title=f":chart_with_upwards_trend:  **{self.crypto_name}**'s all-time high is **{self.fiat_name}{ath_fiat:.{precision}f}**.", color=self.bot.embed_color)
         if ath_time.hour == 0 and ath_time.minute == 0:
-            embed.description = f"All-time high was hit at **{ath_time.strftime(DATE_FORMAT_STRING)}**.\nChange to current price: **{ath_change:2f}%**."
+            embed.description = f"All-time high was hit at **{ath_time.strftime(DATE_FORMAT_STRING)}**.\nChange to current price: **{ath_change:.2f}%**."
         else:
-            embed.description = f"All-time high was hit at **{ath_time.strftime(DATETIME_FORMAT_STRING)}** (UTC).\nChange to current price: **{ath_change:2f}%**."
+            embed.description = f"All-time high was hit at **{ath_time.strftime(DATETIME_FORMAT_STRING)}** (UTC).\nChange to current price: **{ath_change:.2f}%**."
         await ctx.send(embed=embed)
             
     @commands.command(name="atl", aliases=["all-time-low"])
@@ -296,9 +296,9 @@ class TickerCog(commands.Cog, name='Cryptocurrency'):
         atl_change = markets["atl_change_percentage"]
         embed = discord.Embed(title=f":chart_with_downwards_trend:  **{self.crypto_name}**'s all-time low is **{self.fiat_name}{atl_fiat:.{precision}f}**.", color=self.bot.embed_color)
         if atl_time.hour == 0 and atl_time.minute == 0:
-            embed.description = f"All-time low was hit at **{atl_time.strftime(DATE_FORMAT_STRING)}**.\nChange to current price: **{atl_change:2f}%**."
+            embed.description = f"All-time low was hit at **{atl_time.strftime(DATE_FORMAT_STRING)}**.\nChange to current price: **{atl_change:.2f}%**."
         else:
-            embed.description = f"All-time low was hit at **{atl_time.strftime(DATETIME_FORMAT_STRING)}** (UTC).\nChange to current price: **{atl_change:2f}%**."
+            embed.description = f"All-time low was hit at **{atl_time.strftime(DATETIME_FORMAT_STRING)}** (UTC).\nChange to current price: **{atl_change:.2f}%**."
         await ctx.send(embed=embed)
 
 def setup(bot):
