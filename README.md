@@ -20,7 +20,7 @@ This bot is supposed to be on as few servers as possible, since it needs privile
 The Python modules are listed in ``requirements.txt``, so you only need to do ``pip install -r requirements.txt``.
 
 ## Configuration
-Go into ``config,json`` and change the following variables to suit your needs:
+Go into ``config.json`` and change the following variables to suit your needs:
 
 - ``token``: Your Discord bot token.
 - ``cryptocurrency_id``: CoinGecko's ID of your cryptocurrency. You can look them up on their website, but it's usually something like ``nano``, ``bitcoin``, ``ethereum`` etc.
